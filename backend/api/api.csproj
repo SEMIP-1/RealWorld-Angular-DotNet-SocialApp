@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="7.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.27" />
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.18.0" />
     <PackageReference Include="MongoDB.Bson" Version="3.8.1" />

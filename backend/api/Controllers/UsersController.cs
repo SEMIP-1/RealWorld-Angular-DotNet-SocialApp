@@ -5,13 +5,13 @@ using Microsoft.IdentityModel.Tokens;
 
 using api.Models;
 using api.Services;
-using api.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
+using api.Interfaces.UserInterface;
 
 namespace api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
@@ -26,25 +26,62 @@ namespace api.Controllers
 
         [HttpPost]
         [Route("signup")]
-        public async Task<IActionResult> CreateAccount([FromBody] UserInterface user) 
-        { 
-            var NewUser = new User();
-            if (user.FirstName == null || user.LastName == null || user.Email == null || user.Password == null)
+        public async Task<IActionResult> CreateAccount([FromBody] CreateUserInterface body)
+        {
+            var user = new User();
+            if (body.FirstName == null || body.LastName == null || body.Email == null || body.Password == null)
             {
                 return BadRequest(new { message = "Problem with provided body data." });
             }
 
-            NewUser.Username = user.FirstName+" "+user.LastName;
-            NewUser.Email = user.Email;
-            NewUser.Password = NewUser.EncryptPasswordBase64(user.Password);
+            user.Username = body.FirstName + " " + body.LastName;
+            user.Email = body.Email;
+            user.Password = user.EncryptPasswordBase64(body.Password);
 
-            //TODO check if email already exists before creating the account
+            //Check if email already exists before creating the account
+            var CheckExistingUser = await _userService.GetUserByEmail(body.Email);
+            if (CheckExistingUser != null)
+            {
+                return BadRequest(new { message = "Email already exists." });
+            }
 
-            await _userService.CreateUserAsync(NewUser);
-
+            await _userService.CreateUserAsync(user);
             //TODO Create a token and return it to the user
 
-            return Ok(new { result=NewUser});
+            return Ok(new { result = user });
         }
+
+        [HttpPost]
+        [Route("signin")]
+        public async Task<IActionResult> login([FromBody] LoginInterface body)
+        {
+            if (body.Email == null || body.Password == null)
+            {
+                return BadRequest(new { message = "Problem with provided body data." });
+            }
+
+            var user = await _userService.GetUserByEmail(body.Email);
+            if (user is null)
+            {
+                return NotFound();
+            }
+            var decryptedPassword = user.DecryptPasswordBase64(user.Password);
+
+            if (decryptedPassword != body.Password)
+            {
+                return BadRequest(new { message = "Given Email or Password is invalid." });
+            }
+            else 
+            {
+                //Sucessful login
+                //TODO Create a token and return it to the user
+                return Ok(new { result = user });
+            
+            };
+
+        }
+    
+    
+    
     }
 }

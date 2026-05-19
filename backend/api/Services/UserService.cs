@@ -22,5 +22,9 @@ namespace api.Services
             return;
         }
 
+        public async Task<User?> GetUserByEmail(string email)
+        {
+            return await _userCollection.Find(u=>u.Email==email).FirstOrDefaultAsync();
+        }
     }
 }

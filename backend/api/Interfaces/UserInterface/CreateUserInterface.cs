@@ -1,6 +1,6 @@
-﻿namespace api.Interfaces
+﻿namespace api.Interfaces.UserInterface
 {
-    public class UserInterface
+    public class CreateUserInterface
     {
         public string? FirstName { get; set; }
         public string? LastName { get; set; }

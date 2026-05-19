@@ -1,6 +1,12 @@
 using api.Models;
 using api.Services;
 using MongoDB.Driver;
+using Microsoft.AspNetCore.Authentication.BearerToken;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +22,32 @@ builder.Services.AddSingleton<UserService>();
 
 // Enable CORS to allow requests from the frontend(Call App from out side)
 builder.Services.AddCors();
+
+
+//jwt 
+var jwtsecrete = builder.Configuration.GetSection("JwtSecret")["Secret"] ??
+    throw new InvalidOperationException();
+
+builder.Services.AddAuthentication(x => 
+{
+    x.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme=JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(x =>
+{
+    x.RequireHttpsMetadata = true;
+    x.SaveToken = true;
+    x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidIssuer = "http://localhost:localhost:7017",
+        ValidAudience = "http://localhost:localhost:7017",
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtsecrete)),
+        ClockSkew = TimeSpan.Zero,
+    };
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
