@@ -24,14 +24,15 @@ builder.Services.AddSingleton<UserService>();
 builder.Services.AddCors();
 
 
-//jwt 
+#region Jwt Configration
+//Jwt Configration 
 var jwtsecrete = builder.Configuration.GetSection("JwtSecret")["Secret"] ??
     throw new InvalidOperationException();
 
-builder.Services.AddAuthentication(x => 
+builder.Services.AddAuthentication(x =>
 {
-    x.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
-    x.DefaultChallengeScheme=JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(x =>
 {
     x.RequireHttpsMetadata = true;
@@ -42,12 +43,13 @@ builder.Services.AddAuthentication(x =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
-        ValidIssuer = "http://localhost:localhost:7017",
-        ValidAudience = "http://localhost:localhost:7017",
+        ValidIssuer = "https://localhost:7017",
+        ValidAudience = "https://localhost:7017",
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtsecrete)),
         ClockSkew = TimeSpan.Zero,
     };
-});
+}); 
+#endregion
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 using api.Models;
 using api.Services;
@@ -24,6 +27,7 @@ namespace api.Controllers
             _userService = userService;
         }
 
+        #region signup
         [HttpPost]
         [Route("signup")]
         public async Task<IActionResult> CreateAccount([FromBody] CreateUserInterface body)
@@ -50,7 +54,9 @@ namespace api.Controllers
 
             return Ok(new { result = user });
         }
+        #endregion
 
+        #region signin
         [HttpPost]
         [Route("signin")]
         public async Task<IActionResult> login([FromBody] LoginInterface body)
@@ -71,13 +77,37 @@ namespace api.Controllers
             {
                 return BadRequest(new { message = "Given Email or Password is invalid." });
             }
-            else 
+            else
             {
                 //Sucessful login
-                //TODO Create a token and return it to the user
-                return Ok(new { result = user });
-            
-            };
+
+                //Create a token and return it to the user
+                var claims = new List<Claim> 
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub,user.Id??throw new InvalidOperationException()),
+                    new Claim(ClaimTypes.Name,user.Username??throw new InvalidOperationException()),
+                    new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
+                };
+
+                var tokenSecrete = _configuration.GetValue<string>("JwtSecret:Secret");
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenSecrete?? throw new IndexOutOfRangeException()));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                var expires = DateTime.UtcNow.AddHours(1);
+                
+                var token = new JwtSecurityToken(
+                    issuer: "https://localhost:7017",
+                    audience: "https://localhost:7017",
+                    claims: claims,
+                    expires: expires,
+                    signingCredentials: creds
+                    );
+
+                return Ok(new { result = user, token = new JwtSecurityTokenHandler().WriteToken(token) });
+
+            }
+            ; 
+        #endregion
 
         }
     
