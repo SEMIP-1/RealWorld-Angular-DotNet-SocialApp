@@ -51,8 +51,27 @@ namespace api.Controllers
 
             await _userService.CreateUserAsync(user);
             //TODO Create a token and return it to the user
+            var claims = new List<Claim>
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub,user.Id??throw new InvalidOperationException()),
+                    new Claim(ClaimTypes.Name,user.Username??throw new InvalidOperationException()),
+                    new Claim(JwtRegisteredClaimNames.Jti,Guid.NewGuid().ToString()),
+                    new Claim(ClaimTypes.NameIdentifier,user.Id.ToString()),
+                };
 
-            return Ok(new { result = user });
+            var tokenSecrete = _configuration.GetValue<string>("JwtSecret:Secret");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenSecrete ?? throw new IndexOutOfRangeException()));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var expires = DateTime.UtcNow.AddHours(1);
+
+            var token = new JwtSecurityToken(
+                issuer: "https://localhost:7017",
+                audience: "https://localhost:7017",
+                claims: claims,
+                expires: expires,
+                signingCredentials: creds
+                );
+            return Ok(new { result = user, token = new JwtSecurityTokenHandler().WriteToken(token) });
         }
         #endregion
 
@@ -105,13 +124,39 @@ namespace api.Controllers
 
                 return Ok(new { result = user, token = new JwtSecurityTokenHandler().WriteToken(token) });
 
-            }
-            ; 
+            };      
+        }
         #endregion
 
-        }
-    
-    
-    
+        #region Get User By Id
+        [HttpGet]
+        [Route("getUser/{id}")]
+        public async Task<IActionResult> GetUserById([FromRoute] string id)
+        {
+            try
+            {
+                if (id == null)
+                {
+                    return BadRequest(new { message = "Problem with provided body data." });
+                }
+
+                var user = await _userService.GetUserById(id);
+                if (user is null)
+                {
+                    return NotFound(new { massage = "User with given id is not found" });
+                }
+
+                //TODO return Also the user posts
+
+                return Ok(new { result = user, posts = Array.Empty<object>() });
+            }
+            catch
+            {
+                return BadRequest(new { message = "Something went wrong!." });
+            }
+        } 
+        #endregion
+
+
     }
 }

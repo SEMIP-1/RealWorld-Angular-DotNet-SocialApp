@@ -26,5 +26,10 @@ namespace api.Services
         {
             return await _userCollection.Find(u=>u.Email==email).FirstOrDefaultAsync();
         }
+
+        public async Task<User?> GetUserById(string id) 
+        {
+            return await _userCollection.Find(u=>u.Id==id).FirstOrDefaultAsync();
+        }
     }
 }
