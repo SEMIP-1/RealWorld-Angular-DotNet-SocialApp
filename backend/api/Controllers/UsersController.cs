@@ -11,6 +11,7 @@ using api.Services;
 using Microsoft.AspNetCore.Identity;
 using MongoDB.Bson;
 using api.Interfaces.UserInterface;
+using Microsoft.AspNetCore.Authorization;
 
 namespace api.Controllers
 {
@@ -65,8 +66,8 @@ namespace api.Controllers
             var expires = DateTime.UtcNow.AddHours(1);
 
             var token = new JwtSecurityToken(
-                issuer: "https://localhost:7017",
-                audience: "https://localhost:7017",
+                issuer: "https://localhost:7089",
+                audience: "https://localhost:7089",
                 claims: claims,
                 expires: expires,
                 signingCredentials: creds
@@ -115,8 +116,8 @@ namespace api.Controllers
                 var expires = DateTime.UtcNow.AddHours(1);
                 
                 var token = new JwtSecurityToken(
-                    issuer: "https://localhost:7017",
-                    audience: "https://localhost:7017",
+                    issuer: "https://localhost:7089",
+                    audience: "https://localhost:7089",
                     claims: claims,
                     expires: expires,
                     signingCredentials: creds
@@ -154,9 +155,86 @@ namespace api.Controllers
             {
                 return BadRequest(new { message = "Something went wrong!." });
             }
-        } 
+        }
         #endregion
 
+        #region Get Token
+        [HttpGet]
+        [Route("TestJWT"), Authorize]
+        public IActionResult Test()
+        {
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return Ok(new { idToken = userIdToken });
+        }
 
+        [HttpGet]
+        [Route("test-open")]
+        public IActionResult Open()
+        {
+            return Ok("Open endpoint works");
+        }
+
+        [HttpGet]
+        [Route("test-auth")]
+        [Authorize]
+        public IActionResult Auth()
+        {
+            return Ok("Authorized works");
+        }
+
+        #endregion
+
+        [HttpPatch]
+        [Route("Update")]
+        [Authorize]
+
+        public async Task<IActionResult> UpdateUser( [FromBody] UpdateUserInterface body)
+        {
+            var userId =User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId is null) 
+            {
+                return Unauthorized();
+            }
+
+            var user = await _userService.GetUserById(userId);
+
+            if (user is null)
+            {
+                return NotFound(new{message = "User not found"});
+            }
+
+            if (!string.IsNullOrEmpty(body.Name)) 
+            {
+                user.Username = body.Name;
+            }
+            if (!string.IsNullOrEmpty(body.Email))
+            {
+                user.Email = body.Email;
+            }
+            if (!string.IsNullOrEmpty(body.ImageUrl))
+            {
+                user.imageUrl = body.ImageUrl;
+            }
+            if (!string.IsNullOrEmpty(body.bio))
+            {
+                user.bio = body.bio;
+            }
+                        
+            var updatedUser = await _userService.UpdateUser(userId, user);
+
+            return Ok (new 
+                {
+                    result = new
+                    {
+                        updatedUser.Id,
+                        updatedUser.Username,
+                        updatedUser.Email,
+                        updatedUser.imageUrl,
+                        updatedUser.bio
+                    }
+            }
+            );
+        }
     }
 }

@@ -31,5 +31,10 @@ namespace api.Services
         {
             return await _userCollection.Find(u=>u.Id==id).FirstOrDefaultAsync();
         }
+
+        public async Task<User?> UpdateUser(string id, User newUser) 
+        {
+            return await _userCollection.FindOneAndReplaceAsync(u=>u.Id==id, newUser);
+        }
     }
 }
