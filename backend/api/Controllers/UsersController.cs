@@ -1,17 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using api.Interfaces.UserInterface;
+using api.Models;
+using api.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
-using api.Models;
-using api.Services;
-using Microsoft.AspNetCore.Identity;
-using MongoDB.Bson;
-using api.Interfaces.UserInterface;
-using Microsoft.AspNetCore.Authorization;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace api.Controllers
 {
@@ -184,15 +184,16 @@ namespace api.Controllers
 
         #endregion
 
+        #region update
         [HttpPatch]
         [Route("Update")]
         [Authorize]
 
-        public async Task<IActionResult> UpdateUser( [FromBody] UpdateUserInterface body)
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserInterface body)
         {
-            var userId =User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (userId is null) 
+            if (userId is null)
             {
                 return Unauthorized();
             }
@@ -201,10 +202,10 @@ namespace api.Controllers
 
             if (user is null)
             {
-                return NotFound(new{message = "User not found"});
+                return NotFound(new { message = "User not found" });
             }
 
-            if (!string.IsNullOrEmpty(body.Name)) 
+            if (!string.IsNullOrEmpty(body.Name))
             {
                 user.Username = body.Name;
             }
@@ -220,21 +221,74 @@ namespace api.Controllers
             {
                 user.bio = body.bio;
             }
-                        
+
             var updatedUser = await _userService.UpdateUser(userId, user);
 
-            return Ok (new 
+            return Ok(new
+            {
+                result = new
                 {
-                    result = new
-                    {
-                        updatedUser.Id,
-                        updatedUser.Username,
-                        updatedUser.Email,
-                        updatedUser.imageUrl,
-                        updatedUser.bio
-                    }
+                    updatedUser.Id,
+                    updatedUser.Username,
+                    updatedUser.Email,
+                    updatedUser.imageUrl,
+                    updatedUser.bio
+                }
             }
             );
         }
+        #endregion
+
+        #region following
+        [HttpPatch]
+        [Route("{subUserId}/following")]
+        [Authorize]
+        public async Task<IActionResult> UserFollowing([FromRoute] string subUserId) 
+        { 
+            if(string.IsNullOrEmpty(subUserId)) { return NotFound(new { message = "User not found" }); }
+            try 
+            {
+                //subUser is the user that is being followed and mainUser is the user that is following
+                var subUser =await _userService.GetUserById(subUserId);
+                if (subUser is null || subUser.Id is null ) {return NotFound(new { message = "User not found",Success = false }); }
+
+                var mainUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(mainUserId)) { return Unauthorized(new { message = "problem with user token" }); }
+
+                var mainUser = await _userService.GetUserById(mainUserId);
+                if (mainUser is null || mainUser.Id is null) { return NotFound(new { message = "User not found", Success = false }); }
+                if (mainUserId == subUserId){return BadRequest(new{message = "User cannot follow himself", Success = false});}
+
+                mainUser.following ??= new List<string>();
+                subUser.followers ??= new List<string>();
+
+                var isAlreadyFollowing = mainUser.following.Contains(subUserId);
+                if (isAlreadyFollowing)
+                {
+                    mainUser.following.Remove(subUserId);
+                    subUser.followers.Remove(mainUserId);
+                }
+                else
+                {
+                    mainUser.following.Add(subUserId);
+                    subUser.followers.Add(mainUserId);
+                    //TO DO NOTIFY THE USER THAT HE HAS A NEW FOLLOWER
+                }
+
+                await _userService.UpdateUser(mainUserId, mainUser);
+                await _userService.UpdateUser(subUserId, subUser);
+
+                var action = isAlreadyFollowing? "Unfollowed": "Followed";
+
+                return Ok(new {Success= true,message = $"{action} status updated successfully" });
+
+            }
+            catch
+            {
+                //If exception happens: server failed internally Correct response:500 Internal Server Error
+                return StatusCode(500, new{message ="An error occurred while processing the request",Success = false});
+            }
+        }
+        #endregion
     }
 }
