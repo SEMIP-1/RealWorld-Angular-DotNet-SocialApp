@@ -16,7 +16,7 @@ namespace api.Services
             _userCollection = Database.GetCollection<User>(mongoDBSettings.Value.UserCollectionName);
         }
 
-        public async Task CreateUserAsync(User user) 
+        public async Task CreateUserAsync(User user)
         {
             await _userCollection.InsertOneAsync(user);
             return;
@@ -24,17 +24,25 @@ namespace api.Services
 
         public async Task<User?> GetUserByEmail(string email)
         {
-            return await _userCollection.Find(u=>u.Email==email).FirstOrDefaultAsync();
+            return await _userCollection.Find(u => u.Email == email).FirstOrDefaultAsync();
         }
 
-        public async Task<User?> GetUserById(string id) 
+        public async Task<User?> GetUserById(string id)
         {
-            return await _userCollection.Find(u=>u.Id==id).FirstOrDefaultAsync();
+            return await _userCollection.Find(u => u.Id == id).FirstOrDefaultAsync();
         }
 
-        public async Task<User?> UpdateUser(string id, User newUser) 
+        public async Task<User?> UpdateUser(string id, User newUser)
         {
-            return await _userCollection.FindOneAndReplaceAsync(u=>u.Id==id, newUser);
+            return await _userCollection.FindOneAndReplaceAsync(u => u.Id == id, newUser);
         }
+
+        public async Task DeleteUserAsync(string id)
+        { 
+            FilterDefinition<User> filter = Builders<User>.Filter.Eq(u => u.Id, id);
+            await _userCollection.DeleteOneAsync(filter);
+            return;
+        }
+
     }
 }

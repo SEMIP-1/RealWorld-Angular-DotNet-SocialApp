@@ -339,10 +339,20 @@ namespace api.Controllers
 
                 return BadRequest(new { Message = ex.Message, Success = false });
             }
-        } 
+        }
         #endregion
 
+        [HttpDelete]
+        [Route("delete/{userId}")]
+        [Authorize]
+        public async Task<IActionResult> DeletUser([FromRoute] string userId) 
+        {
+            var mainUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if(mainUserId == null|| mainUserId != userId) return Unauthorized(new { Message = "User is Not Found", Success = false });
 
+            await _userService.DeleteUserAsync(userId);
+            return Ok(new {Message="User deleted successfully"});
+        }
 
     }
 }
