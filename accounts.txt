@@ -1,0 +1,16 @@
+{
+  "email": "admin",
+  "password": "admin"
+}
+{
+  "email": "user1@social",
+  "password": "user1@123"
+}
+{
+  "email": "user2@social",
+  "password": "user2@123"
+}
+{
+  "email": "user3@social",
+  "password": "user3@123"
+}

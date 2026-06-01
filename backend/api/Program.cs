@@ -18,6 +18,7 @@ builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("Mo
 
 // Register the UserServices as a singleton
 builder.Services.AddSingleton<UserService>();
+builder.Services.AddSingleton<PostService>();
 
 // Enable CORS to allow requests from the frontend(Call App from out side)
 builder.Services.AddCors();

@@ -13,7 +13,7 @@ namespace api.Services
         {
             var Client = new MongoClient(mongoDBSettings.Value.ConnectionString);
             var Database = Client.GetDatabase(mongoDBSettings.Value.DatabaseName);
-            _userCollection = Database.GetCollection<User>(mongoDBSettings.Value.UserCollectionName);
+            _userCollection = Database.GetCollection<User>(mongoDBSettings.Value.UserCollection);
         }
 
         public async Task CreateUserAsync(User user)
@@ -43,6 +43,8 @@ namespace api.Services
             await _userCollection.DeleteOneAsync(filter);
             return;
         }
+
+        
 
     }
 }
