@@ -1,4 +1,4 @@
-﻿using api.Interfaces.UserInterface;
+﻿using api.Interfaces;
 using api.Models;
 using api.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -275,7 +275,7 @@ namespace api.Controllers
         }
         #endregion
 
-        #region getSuggestedUsers
+        #region Get Suggested Users
         [HttpGet]
         [Route("getSuggestedUsers")]
         [Authorize]
@@ -342,17 +342,19 @@ namespace api.Controllers
         }
         #endregion
 
+        #region Delete User
         [HttpDelete]
         [Route("delete/{userId}")]
         [Authorize]
-        public async Task<IActionResult> DeletUser([FromRoute] string userId) 
+        public async Task<IActionResult> DeletUser([FromRoute] string userId)
         {
             var mainUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if(mainUserId == null|| mainUserId != userId) return Unauthorized(new { Message = "User is Not Found", Success = false });
+            if (mainUserId == null || mainUserId != userId) return Unauthorized(new { Message = "User is Not Found", Success = false });
 
             await _userService.DeleteUserAsync(userId);
-            return Ok(new {Message="User deleted successfully"});
-        }
+            return Ok(new { Message = "User deleted successfully" });
+        } 
+        #endregion
 
     }
 }
