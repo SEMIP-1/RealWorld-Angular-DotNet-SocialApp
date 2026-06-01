@@ -144,7 +144,7 @@ namespace api.Controllers
                 var user = await _userService.GetUserById(id);
                 if (user is null)
                 {
-                    return NotFound(new { massage = "User with given id is not found" });
+                    return NotFound(new { message = "User with given id is not found" });
                 }
 
                 //TODO return Also the user posts
@@ -166,22 +166,6 @@ namespace api.Controllers
             var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Ok(new { idToken = userIdToken });
         }
-
-        [HttpGet]
-        [Route("test-open")]
-        public IActionResult Open()
-        {
-            return Ok("Open endpoint works");
-        }
-
-        [HttpGet]
-        [Route("test-auth")]
-        [Authorize]
-        public IActionResult Auth()
-        {
-            return Ok("Authorized works");
-        }
-
         #endregion
 
         #region update
@@ -259,8 +243,8 @@ namespace api.Controllers
                 if (mainUser is null || mainUser.Id is null) { return NotFound(new { message = "User not found", Success = false }); }
                 if (mainUserId == subUserId){return BadRequest(new{message = "User cannot follow himself", Success = false});}
 
-                mainUser.following ??= new List<string>();
-                subUser.followers ??= new List<string>();
+                mainUser.following ??= new HashSet<string>();
+                subUser.followers ??= new HashSet<string>();
 
                 var isAlreadyFollowing = mainUser.following.Contains(subUserId);
                 if (isAlreadyFollowing)
@@ -283,12 +267,82 @@ namespace api.Controllers
                 return Ok(new {Success= true,message = $"{action} status updated successfully" });
 
             }
-            catch
+            catch (Exception ex)
             {
-                //If exception happens: server failed internally Correct response:500 Internal Server Error
-                return StatusCode(500, new{message ="An error occurred while processing the request",Success = false});
+
+                return BadRequest(new { Message = ex.Message, Success = false });
             }
         }
         #endregion
+
+        #region getSuggestedUsers
+        [HttpGet]
+        [Route("getSuggestedUsers")]
+        [Authorize]
+        public async Task<IActionResult> GetSuggestedUsers()
+        {
+            try
+            {
+                var mainUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (string.IsNullOrEmpty(mainUserId)) { return Unauthorized(new { Message = "User is Not Found", Success = false }); }
+                var mainUser = await _userService.GetUserById(mainUserId);
+                if (mainUser == null) { return NotFound(new { Message = "Main user not found", Success = false }); }
+
+                var mainUserFollowingId = mainUser.following;
+                if (mainUserFollowingId == null) { return NotFound(new { Message = "Main user not following anyone", Success = false }); }
+
+                var mainUserFollowing = new List<User>();
+
+                foreach (var followingUserId in mainUserFollowingId)
+                {
+                    var followingUser = await _userService.GetUserById(followingUserId);
+                    if (followingUser != null)
+                    {
+                        mainUserFollowing.Add(followingUser);
+                    }
+                }
+
+                var suggestedUsers = new HashSet<string>();
+                var finalSuggestedUsers = new List<User>();
+
+                foreach (var followingUser in mainUserFollowing)
+                {
+                    if (followingUser.followers != null && followingUser.Id != null)
+                    {
+                        foreach (var subUserId in followingUser.followers)
+                        {
+                            if (suggestedUsers.Contains(subUserId) || subUserId == mainUserId|| mainUserFollowingId.Contains(subUserId)) { continue; }
+                            var subUser = await _userService.GetUserById(subUserId);
+                            if (subUser != null) { finalSuggestedUsers.Add(subUser); }
+                            suggestedUsers.Add(subUserId);
+                        }
+                    }
+
+                    if (followingUser.following != null && followingUser.Id != null)
+                    {
+                        foreach (var subUserId in followingUser.following)
+                        {
+                            if (suggestedUsers.Contains(subUserId) || subUserId == mainUserId|| mainUserFollowingId.Contains(subUserId)) { continue; }
+                            var subUser = await _userService.GetUserById(subUserId);
+                            if (subUser != null) { finalSuggestedUsers.Add(subUser); }
+                            suggestedUsers.Add(subUserId);
+                        }
+                    }
+                }
+
+                return Ok(new { Users=finalSuggestedUsers,
+                                Success = true,
+                                Message="Suggested users retrieved successfully"});
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(new { Message = ex.Message, Success = false });
+            }
+        } 
+        #endregion
+
+
+
     }
 }

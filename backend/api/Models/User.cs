@@ -22,8 +22,8 @@ namespace api.Models
         public string imageUrl { get; set; } = null!;
         public string bio { get; set; } = null!;
 
-        public List<string> followers { get; set; } = new List<string>();
-        public List<string> following { get; set; } = new List<string>();
+        public HashSet<string> followers { get; set; } = new HashSet<string>();
+        public HashSet<string> following { get; set; } = new HashSet<string>();
 
         internal string DecryptPasswordBase64(string base64EncodedData)
         {
