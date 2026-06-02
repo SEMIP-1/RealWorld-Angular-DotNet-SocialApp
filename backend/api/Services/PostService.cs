@@ -76,26 +76,25 @@ namespace api.Services
             return (posts, users);
         }
 
-        public Object Query(List<string>ides, int? queryPage)
+        public async Task<Object> Query(List<string>ides, int? queryPage)
         {
-            var filter = Builders<Post>.Filter.Empty;
-            foreach(var id in ides)
-            {
-                filter = Builders<Post>.Filter.Regex("creator", new BsonRegularExpression(id,"i"));
-            }
-
+            var filter = Builders<Post>.Filter.In("creator",ides);
             var sort = Builders<Post>.Sort.Descending("_id");
             var find =_postCollection.Find(filter).Sort(sort);
 
-            int currentPage = queryPage.GetValueOrDefault(1)==0? 1: queryPage.GetValueOrDefault(1);
+            int currentPage = Math.Max(queryPage??1, 1);
             int perPage = 4;
+            long totalPosts= await find.CountDocumentsAsync();
+            int numberOfPages = (int)Math.Ceiling( totalPosts / (double)perPage);
 
-            int numberOfPages = find.CountDocuments() /perPage;
+            var posts = await find.Skip((currentPage - 1) * perPage).Limit(perPage).ToListAsync();
+
             return new
             {
-                data = find.Skip((currentPage - 1) * perPage).Limit(perPage).ToList(),
+                data = posts,
                 numberOfPages,
                 currentPage,
+                totalPosts
             };
         }
 

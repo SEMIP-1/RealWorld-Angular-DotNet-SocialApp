@@ -19,7 +19,7 @@ namespace api.Models
         [BsonElement("message")]    
         public string? message { get; set; }
 
-        public string? slectedFiles { get; set; }
+        public string? selectedFiles { get; set; }
         public List<string> likes { get; set; }=new List<string>();
         public List<string> comments { get; set; } = new List<string>();
         public DateTime createdAt { get; set; } = DateTime.Now;
