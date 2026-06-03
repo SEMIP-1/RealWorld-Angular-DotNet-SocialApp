@@ -60,5 +60,28 @@ namespace api.Controllers
         
             return Ok(new { Message = "Post retrieved successfully", userPost });
         }
+
+        [HttpPost]
+        [Route("{postId}/comments")]
+        [Authorize]
+        public async Task<IActionResult> AddComment([FromRoute] string postId, [FromBody] CommentBodyInterface body)
+        {
+            if (string.IsNullOrEmpty(postId)) return NotFound(new { Message = "Post Not Found" });
+            if (string.IsNullOrWhiteSpace(body.comment)||body is null) return BadRequest(new { Message = "please Enter post comment" });
+
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "User is not authorized" });
+
+            var post = await _postServices.GetPostById(postId);
+            if (post == null) return NotFound(new { Message = "Post not found" });
+
+            post.comments.Add(body.comment);
+            var newPost = await _postServices.UpdatePost(postId, post);
+            if (newPost == null) return BadRequest(new { Message = "Problem with values" , Success = false});
+
+            //to do notify the post creator 
+
+            return Ok(new { Message = "Comment added successfully", result = newPost });
+        }
     }
 }

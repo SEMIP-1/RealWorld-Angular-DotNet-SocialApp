@@ -11,8 +11,6 @@
 
     public class CommentBodyInterface
     {
-        public string? postId { get; set; }
         public string? comment { get; set; }
-        public string? userId { get; set; }
     }
 }
