@@ -78,7 +78,7 @@ namespace api.Services
 
         public async Task<Object> Query(List<string>ides, int? queryPage)
         {
-            var filter = Builders<Post>.Filter.In("creator",ides);
+            var filter = Builders<Post>.Filter.In("creator",ides);  
             var sort = Builders<Post>.Sort.Descending("_id");
             var find =_postCollection.Find(filter).Sort(sort);
 
