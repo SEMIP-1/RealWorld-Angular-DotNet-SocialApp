@@ -107,21 +107,56 @@ namespace api.Controllers
         }
         #endregion
 
+        #region Feed
         [HttpGet]
         [Route("")]
         [Authorize]
-        public async Task<IActionResult> GetPostsPegenationAsync([FromQuery]int page) 
+        public async Task<IActionResult> GetPostsPegenationAsync([FromQuery] int page)
         {
-            var userIdToken=User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new {Message="User is Unautharized"});
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "User is Unautharized" });
 
             var user = await _postServices.GetUserById(userIdToken);
-            if(user is null) return NotFound(new {Message="Not found"});
-            var ids = user.following.ToList()??new List<string>();
-            
+            if (user is null) return NotFound(new { Message = "Not found" });
+            var ids = user.following?.ToList() ?? new List<string>();
+
             ids.Add(user.Id.ToString());
 
-            return Ok(await _postServices.Query(ids,page));
+            return Ok(await _postServices.Query(ids, page));
         }
+        #endregion
+
+        #region Update My Post
+        [HttpPatch]
+        [Route("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> UpdatePost([FromRoute] string postId, [FromBody] CreateOrUpdatePostInterface updatedPost)
+        {
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "Unauthorized user access" });
+
+            if (string.IsNullOrEmpty(postId)) return BadRequest(new { Message = "Invalid post ID" });
+            if (updatedPost is null) return BadRequest(new { Message = "Updated post data is required" });
+
+
+            var post = await _postServices.GetPostById(postId);
+            if (post is null) return NotFound(new { Message = "Post not found" });
+
+            if (post.creator != userIdToken) return Unauthorized(new { Message = "You are not authorized to update this post" });
+
+            post.title = updatedPost.title ?? post.title;
+            post.message = updatedPost.message ?? post.message;
+            post.selectedFiles = updatedPost.selectedFiles ?? post.selectedFiles;
+
+            if (string.IsNullOrWhiteSpace(post.title) || string.IsNullOrWhiteSpace(post.message)) return BadRequest(new { Message = "Post data is required" });
+
+            var updatedPostResult = await _postServices.UpdatePost(postId, post);
+            if (updatedPostResult is null) return BadRequest(new { Message = "Failed to update post" });
+
+            return Ok(new { Message = "Post updated successfully", result = updatedPostResult });
+        } 
+        #endregion
+
+
     }
 }
