@@ -27,12 +27,12 @@ namespace api.Services
 
         public async Task<Post?> UpdatePost(string id, Post newPost)
         {
-            return await _postCollection.FindOneAndReplaceAsync(p => p._id == id, newPost);
+            return await _postCollection.FindOneAndReplaceAsync(p => p.id == id, newPost);
         }
 
         public async Task<Post?> GetPostById(string id)
         {
-            return await _postCollection.Find(p => p._id == id).FirstOrDefaultAsync();
+            return await _postCollection.Find(p => p.id == id).FirstOrDefaultAsync();
         }
 
         public async Task<User?> GetUserById(string id)
@@ -42,7 +42,7 @@ namespace api.Services
 
         public async Task DeletePostAsync(string id)
         {
-            FilterDefinition<Post> filter = Builders<Post>.Filter.Eq(p => p._id, id);
+            FilterDefinition<Post> filter = Builders<Post>.Filter.Eq(p => p.id, id);
             await _postCollection.DeleteOneAsync(filter);
             return;
         }

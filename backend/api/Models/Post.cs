@@ -8,7 +8,7 @@ namespace api.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? _id { get; set; }
+        public string? id { get; set; }
 
         [BsonElement("title")]
         public string? title { get; set; }
@@ -20,8 +20,8 @@ namespace api.Models
         public string? message { get; set; }
 
         public string? selectedFiles { get; set; }
-        public List<string> likes { get; set; }=new List<string>();
-        public List<string> comments { get; set; } = new List<string>();
+        public HashSet<string> likes { get; set; }=new HashSet<string>();
+        public HashSet<string> comments { get; set; } = new HashSet<string>();
         public DateTime createdAt { get; set; } = DateTime.Now;
     }
 }

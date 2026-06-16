@@ -41,7 +41,7 @@ namespace api.Controllers
 
             await _postServices.CreateOnePostAsync(newPost);
 
-            if (newPost._id == null) return BadRequest(new { Message = "Failed to create post" });
+            if (newPost.id == null) return BadRequest(new { Message = "Failed to create post" });
 
             return Ok(new { Message = "Post created successfully", newPost });
         }
@@ -154,9 +154,61 @@ namespace api.Controllers
             if (updatedPostResult is null) return BadRequest(new { Message = "Failed to update post" });
 
             return Ok(new { Message = "Post updated successfully", result = updatedPostResult });
-        } 
+        }
         #endregion
 
+        #region Post Likes
+        [HttpPatch]
+        [Route("{postId}/like")]
+        [Authorize]
+        public async Task<IActionResult> PostLikes([FromRoute]string postId)
+        {
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "Unauthorized user access" });
 
+            if (string.IsNullOrWhiteSpace(postId)) return BadRequest(new {Message="Post does not exist"});
+            var post=await _postServices.GetPostById(postId);
+            if (post is null) return NotFound(new { Message = "Post is not Found" });
+
+            post.likes ??= new HashSet<string>();
+            var isAlreadyLiked = post.likes.Contains(userIdToken);
+            if (isAlreadyLiked)
+            {
+                post.likes.Remove(userIdToken);
+            }
+            else
+            {
+                post.likes.Add(userIdToken);
+                //TO DO NOTIFY THE Post Creator THAT HE HAS A NEW like on post
+            }
+
+            await _postServices.UpdatePost(postId,post);
+            var action = isAlreadyLiked ? "UnLiked" : "Liked";
+            var newPost = new Post();
+
+            return Ok(new { Success = true, message = $"{action} status updated successfully", newPost = post });
+        }
+        #endregion
+
+        #region Delete Post
+        [HttpDelete]
+        [Route("{postId}")]
+        [Authorize]
+        public async Task<IActionResult> deletePost([FromRoute]string postId)
+        {
+            var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new {Message="User is Unauthorized"});
+
+            if (string.IsNullOrEmpty(postId)) return BadRequest(new { Message = "Invalid post ID" });
+
+            var post = await _postServices.GetPostById(postId);
+            if (post is null) return NotFound(new { Message = "Post not found" });
+
+            if (post.creator != userIdToken) return Unauthorized(new { Message = "You are not authorized to update this post" });
+
+            await _postServices.DeletePostAsync(postId);    
+            return Ok(new { Massage = "the post is deleted" });
+        }
+        #endregion
     }
 }
