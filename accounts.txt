@@ -1,4 +1,8 @@
 {
+  "email": "salaheldinm.1999@gmail.com",
+  "password": "salaheldinm"
+}
+{
   "email": "admin",
   "password": "admin"
 }

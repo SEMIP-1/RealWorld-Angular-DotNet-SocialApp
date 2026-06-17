@@ -49,7 +49,7 @@ namespace api.Controllers
         }
         #endregion
 
-        #region Send a Message
+        #region get messages by nums
         [HttpGet]
         [Route("getmessagesbynums")]
         [Authorize]
@@ -69,6 +69,45 @@ namespace api.Controllers
             if (msgs is null) return BadRequest(new { message = "Message is null." });
 
             return Ok(new { msgs });
+        }
+        #endregion
+
+        #region Get User Unread Messages
+        [HttpGet]
+        [Route("getuserunreadmessages")]
+        [Authorize]
+        public async Task<IActionResult> GetUserUnreadMessages([FromQuery] string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(new { message = "User ID is required." });
+            }
+            var senderIdToken = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(senderIdToken?.Value)) return Unauthorized("Sender ID not found in token.");
+            if (userId != senderIdToken.Value) return Unauthorized("User ID does not match the token.");
+
+            var unReadedMessages = await _chatService.GetUserUnReadedMessagesAsync(userId);
+            int totalUnreadMessages = unReadedMessages.Sum(m => m.NumOfUnReadedMessages);
+            return Ok(new { unReadedMessages, totalUnreadMessages });
+        }
+        #endregion
+
+        #region Mark Messages as Read
+        [HttpGet]
+        [Route("markmessagesasread")]
+        [Authorize]
+        public async Task<IActionResult> MarkMessagesAsRead([FromQuery] string senderId, [FromQuery] string receiverId)
+        {
+            if (string.IsNullOrEmpty(senderId) || string.IsNullOrEmpty(receiverId))
+            {
+                return BadRequest(new { message = "Sender ID and Receiver ID are required." });
+            }
+            var senderIdToken = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(senderIdToken?.Value)) return Unauthorized("Sender ID not found in token.");
+            if (senderId != senderIdToken.Value) return Unauthorized("Sender ID does not match the token.");
+
+            await _chatService.MarkMsgsAsReadedAsync(senderId, receiverId);
+            return Ok(new { message = "Messages marked as read." });
         }
         #endregion
     }

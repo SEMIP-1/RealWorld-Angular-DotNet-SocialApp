@@ -96,7 +96,7 @@ namespace api.Services
             return unReadedMessages;
         }
 
-        public async Task<bool> MarkMsgsAsReaded(string senderId, string receiverId)
+        public async Task<bool> MarkMsgsAsReadedAsync(string senderId, string receiverId)
         {
             var filter = Builders<UnReadedMessages>.Filter.And(
                 Builders<UnReadedMessages>.Filter.Eq(u1 => u1.MainUserId, senderId),
