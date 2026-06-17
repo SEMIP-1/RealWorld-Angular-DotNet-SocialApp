@@ -8,6 +8,7 @@
         public string PostCollection { get; set; }= null!;
         public string MessageCollection { get; set; } = null!;
         public string UnReadedMessageCollection { get; set; } = null!;
+        public string NotificationCollection { get; set; } = null!;
 
     }
 }

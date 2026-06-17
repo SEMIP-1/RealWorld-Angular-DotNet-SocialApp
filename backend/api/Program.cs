@@ -20,6 +20,7 @@ builder.Services.Configure<MongoDBSettings>(builder.Configuration.GetSection("Mo
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<PostService>();
 builder.Services.AddSingleton<ChatService>();
+builder.Services.AddSingleton<NotificationService>();
 
 // Enable CORS to allow requests from the frontend(Call App from out side)
 builder.Services.AddCors();
