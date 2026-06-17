@@ -1,6 +1,6 @@
 ﻿namespace api.Interfaces
 {
-    public class MessageInterface
+    public class SendMessageInterface
     {
         public string content { get; set; } = null!;
         public string senderId { get; set; } = null!;

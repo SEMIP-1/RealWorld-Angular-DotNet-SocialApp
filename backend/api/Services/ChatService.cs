@@ -20,12 +20,12 @@ namespace api.Services
             _userCollection = Database.GetCollection<User>(mongoDBSettings.Value.UserCollection);
         }
 
-        public async Task SendMessageAsync(Message message,string senderId,string receiverId)
+        public async Task SendMessageAsync(Message message)
         {
             // Implementation for sending message
             await _messageCollection.InsertOneAsync(message);
 
-            await SetUpdatedUnreadedMessageBetweenUsers(senderId, receiverId);
+            await SetUpdatedUnreadedMessageBetweenUsers(message.SenderId, message.ReceiverId);
             return;
         }
 
@@ -49,7 +49,7 @@ namespace api.Services
             await _UnReadedMessageCollection.FindOneAndUpdateAsync(filter, update, options);
         }
 
-        public async Task<List<Message>> GetMessagesAsync(int page, string user1Id, string user2Id)
+        public async Task<List<Message>> GetMessagesAsynByNums(int page, string user1Id, string user2Id)
         {
             var senderFilter1=Builders<Message>.Filter.Eq(u1=>u1.SenderId, user1Id);
             var receiverFilter1 = Builders<Message>.Filter.Eq(u2 => u2.ReceiverId, user2Id);
@@ -93,20 +93,28 @@ namespace api.Services
                 .Sort(sort)
                 .ToListAsync();
 
-            unReadedMessages.Reverse();
-
             return unReadedMessages;
         }
 
-        public async Task UserReadTheMessge(string unReadedMessagesId)
+        public async Task<bool> MarkMsgsAsReaded(string senderId, string receiverId)
         {
-            var filter = Builders<UnReadedMessages>.Filter.Eq(u1 => u1.Id, unReadedMessagesId);
+            var filter = Builders<UnReadedMessages>.Filter.And(
+                Builders<UnReadedMessages>.Filter.Eq(u1 => u1.MainUserId, senderId),
+                Builders<UnReadedMessages>.Filter.Eq(u2 => u2.OtherUserId, receiverId)
+            );
 
             var update = Builders<UnReadedMessages>.Update
                 .Set(r => r.IsReaded, true)
                 .Set(r => r.NumOfUnReadedMessages, 0);
 
-            await _UnReadedMessageCollection.FindOneAndUpdateAsync(filter, update);
+            var options = new FindOneAndUpdateOptions<UnReadedMessages>
+            {
+                ReturnDocument = ReturnDocument.After
+            };
+
+            var result = await _UnReadedMessageCollection.FindOneAndUpdateAsync(filter, update, options);
+            return result!=null;
+
         }
     }
 }
