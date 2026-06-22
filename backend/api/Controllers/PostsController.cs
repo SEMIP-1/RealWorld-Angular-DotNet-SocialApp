@@ -5,6 +5,7 @@ using System.Security.Claims;
 using api.Interfaces;
 using api.Models;
 using api.Services;
+using System.Runtime.CompilerServices;
 
 
 namespace api.Controllers
@@ -15,11 +16,13 @@ namespace api.Controllers
     {
         private readonly PostService _postServices;
         private readonly IConfiguration _configuration;
+        private readonly NotificationService _notificationService;
 
-        public PostsController(IConfiguration configuration, PostService postService)
+        public PostsController(IConfiguration configuration, PostService postService, NotificationService notificationService)
         {
             _postServices = postService;
             _configuration = configuration;
+            _notificationService = notificationService;
         }
 
         #region CreatePosts
@@ -76,6 +79,9 @@ namespace api.Controllers
             var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "User is not authorized" });
 
+            var mainUser = await _postServices.GetUserById(userIdToken);
+            if (mainUser is null) return NotFound(new { Message = "User not found" });
+
             var post = await _postServices.GetPostById(postId);
             if (post == null) return NotFound(new { Message = "Post not found" });
 
@@ -84,6 +90,18 @@ namespace api.Controllers
             if (newPost == null) return BadRequest(new { Message = "Problem with values", Success = false });
 
             //to do notify the post creator 
+            // Call Notification Start 
+            var details = mainUser.Username + " commented on your post.";
+            var us = new userIn { name = mainUser.Username ?? string.Empty, avatar = mainUser.imageUrl ?? string.Empty };
+            var notification = new Notification
+            {
+                details = details,
+                mainUserId = post.creator,
+                targetId = mainUser.Id,
+                user = us,
+            };
+            await _notificationService.CreateNotification(notification);
+            //Call Notification end  
 
             return Ok(new { Message = "Comment added successfully", result = newPost });
         }
@@ -117,6 +135,8 @@ namespace api.Controllers
             if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "User is Unautharized" });
 
             var user = await _postServices.GetUserById(userIdToken);
+
+
             if (user is null) return NotFound(new { Message = "Not found" });
             var ids = user.following?.ToList() ?? new List<string>();
 
@@ -166,6 +186,9 @@ namespace api.Controllers
             var userIdToken = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userIdToken)) return Unauthorized(new { Message = "Unauthorized user access" });
 
+            var mainUser = await _postServices.GetUserById(userIdToken);
+            if (mainUser is null) return NotFound(new { Message = "User not found" });
+
             if (string.IsNullOrWhiteSpace(postId)) return BadRequest(new {Message="Post does not exist"});
             var post=await _postServices.GetPostById(postId);
             if (post is null) return NotFound(new { Message = "Post is not Found" });
@@ -180,6 +203,18 @@ namespace api.Controllers
             {
                 post.likes.Add(userIdToken);
                 //TO DO NOTIFY THE Post Creator THAT HE HAS A NEW like on post
+                // Call Notification Start 
+                var details = mainUser.Username + " liked your post.";
+                var us = new userIn { name = mainUser.Username ?? string.Empty, avatar = mainUser.imageUrl ?? string.Empty };
+                var notification = new Notification
+                {
+                    details = details,
+                    mainUserId = post.creator,
+                    targetId = userIdToken,
+                    user = us,
+                };
+                await _notificationService.CreateNotification(notification);
+                //Call Notification end  
             }
 
             await _postServices.UpdatePost(postId,post);

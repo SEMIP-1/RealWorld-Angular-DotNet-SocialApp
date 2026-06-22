@@ -21,11 +21,13 @@ namespace api.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly UserService _userService;
+        private readonly NotificationService _notificationService;
 
-        public UsersController(IConfiguration configuration, UserService userService)
+        public UsersController(IConfiguration configuration, UserService userService, NotificationService notificationService)
         {
             _configuration = configuration;
             _userService = userService;
+            _notificationService = notificationService;
         }
 
         #region signup
@@ -257,6 +259,18 @@ namespace api.Controllers
                     mainUser.following.Add(subUserId);
                     subUser.followers.Add(mainUserId);
                     //TO DO NOTIFY THE USER THAT HE HAS A NEW FOLLOWER
+                    // Call Notification Start 
+                    var details = mainUser.Username + " started following you.";
+                    var us = new userIn { name = mainUser.Username ?? string.Empty, avatar = mainUser.imageUrl ?? string.Empty };
+                    var notification = new Notification
+                    {
+                        details = details,
+                        mainUserId = subUserId,
+                        targetId = mainUserId,
+                        user = us,
+                    };
+                    await _notificationService.CreateNotification(notification);
+                    //Call Notification end  
                 }
 
                 await _userService.UpdateUser(mainUserId, mainUser);

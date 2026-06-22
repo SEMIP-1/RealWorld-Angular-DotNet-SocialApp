@@ -1,6 +1,7 @@
 ﻿using api.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using MongoDB.Bson;
 
 namespace api.Services
 {
@@ -8,7 +9,6 @@ namespace api.Services
     {
         private readonly IMongoCollection<UnReadedMessages> _UnReadedMessageCollection;
         private readonly IMongoCollection<Message> _messageCollection;
-        private readonly IMongoCollection<User> _userCollection;
 
         public ChatService(IOptions<MongoDBSettings> mongoDBSettings)
         {
@@ -17,7 +17,6 @@ namespace api.Services
 
             _UnReadedMessageCollection = Database.GetCollection<UnReadedMessages>(mongoDBSettings.Value.UnReadedMessageCollection);
             _messageCollection = Database.GetCollection<Message>(mongoDBSettings.Value.MessageCollection);
-            _userCollection = Database.GetCollection<User>(mongoDBSettings.Value.UserCollection);
         }
 
         public async Task SendMessageAsync(Message message)

@@ -8,13 +8,13 @@ namespace api.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? id { get; set; }
+        public string? id { get; set; } =null!;
 
         [BsonElement("title")]
         public string? title { get; set; }
 
         [BsonElement ("creator")]
-        public string? creator { get; set; }
+        public string? creator { get; set; } = null!;
 
         [BsonElement("message")]    
         public string? message { get; set; }

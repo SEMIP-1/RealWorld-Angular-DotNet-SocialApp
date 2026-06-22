@@ -7,7 +7,7 @@ namespace api.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; }=null!;
         public string MainUserId { get; set; } = null!;
         public string OtherUserId { get; set; } = null!;
         public bool IsReaded { get; set; } = false;

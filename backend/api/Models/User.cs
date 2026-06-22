@@ -8,7 +8,7 @@ namespace api.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
+        public string Id { get; set; }=null!;
 
         [BsonElement("username")]
         public string Username { get; set; } = null!;
@@ -20,7 +20,7 @@ namespace api.Models
         public string Password { get; set; } = null!;
 
         public string imageUrl { get; set; } = null!;
-        public string bio { get; set; } = null!;
+        public string bio { get; set; } = string.Empty;
 
         public HashSet<string> followers { get; set; } = new HashSet<string>();
         public HashSet<string> following { get; set; } = new HashSet<string>();

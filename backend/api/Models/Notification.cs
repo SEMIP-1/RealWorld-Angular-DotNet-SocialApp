@@ -10,7 +10,7 @@ namespace api.Models
         public string? id { get; set; }
 
         [BsonElement("details")]
-        public string? detaails { get; set; }
+        public string? details { get; set; }
 
         [BsonElement("mainUserId")]
         public string? mainUserId { get; set; }
@@ -20,11 +20,12 @@ namespace api.Models
 
         public bool isRead { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public userIn user { get; set; } = null!;
     }
 
     public class userIn
     {
-        public string name { get; set; }
-        public string avatar { get; set; }
+        public string name { get; set; } = string.Empty;
+        public string avatar { get; set; } = string.Empty;
     }
 }
