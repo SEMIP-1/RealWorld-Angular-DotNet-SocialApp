@@ -209,6 +209,7 @@ namespace api.Controllers
             }
 
             var updatedUser = await _userService.UpdateUser(userId, user);
+            if (updatedUser is null) return NotFound();
 
             return Ok(new
             {
@@ -369,6 +370,5 @@ namespace api.Controllers
             return Ok(new { Message = "User deleted successfully" });
         } 
         #endregion
-
     }
 }
